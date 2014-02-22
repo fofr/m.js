@@ -41,8 +41,8 @@
  * Returns context.
  */
 (function (module) {
-  function lazy(context, method) {
-    var cache = {};
+  function lazy(context, method, wrapper) {
+    var cache = [];
 
     method  = method  || 'set';
     context = context || {};
@@ -51,54 +51,32 @@
       value: function (name, value) {
         var subject = arguments.length === 2 ? value : null;
 
-        cache[name] = value;
+        cache.push(name);
 
-        Object.defineProperty(context, name, {
-          get: function () {
-            var isFunction = typeof subject === 'function';
-            var isMocked = isFunction && typeof subject.getCall === 'function';
+        function defer() {
+          Object.defineProperty(context, name, {
+            get: function () {
+              var isFunction = typeof subject === 'function';
+              var isMocked = isFunction && typeof subject.getCall === 'function';
 
-            // If this is a plain function then call it and return the value
-            // overwrite this getter with a standard property. However if it's
-            // a sinon mock then just return it without calling it.
-            return context[name] = isFunction && !isMocked ? subject.call(context) : subject;
-          },
-          set: function (value) {
-            // If the object is assigned directly overwrite the getter and
-            // treat as a normal property assignment.
-            Object.defineProperty(context, name, {value: value, enumerable: true, writeable: true, configurable: true});
-          },
-          configurable: true,
-          enumerable: true // Ensure it behaves like a standard assignment.
-        });
+              // If this is a plain function then call it and return the value
+              // overwrite this getter with a standard property. However if it's
+              // a sinon mock then just return it without calling it.
+              return context[name] = isFunction && !isMocked ? subject.call(context) : subject;
+            },
+            set: function (value) {
+              // If the object is assigned directly overwrite the getter and
+              // treat as a normal property assignment.
+              Object.defineProperty(context, name, {value: value, enumerable: true, writeable: true, configurable: true});
+            },
+            configurable: true,
+            enumerable: true // Ensure it behaves like a standard assignment.
+          });
+        }
+
+        wrapper ? wrapper(defer) : defer();
       }
     });
-
-    // Restores the key back to the last defined state. This can be useful
-    // for resetting a context between tests for example.
-    //
-    // Examples
-    //
-    //   var ctx = lazy();
-    //   ctx.set('foo', 'bar');
-    //
-    //   it('does something', function () {
-    //     ctx.set('foo', 'baz');
-    //   });
-    //
-    //   afterEach(function () {
-    //     ctx.restore(); // Reset context for next test.
-    //     ctx.foo === 'bar';
-    //   });
-    //
-    // Returns nothing.
-    context[method].restore = function () {
-      for (var key in cache) {
-        if (cache.hasOwnProperty(key)) {
-          context[method](key, cache[key]);
-        }
-      }
-    };
 
     // Clean up all test variables lazy evaluated with this.lazy().
     // As an alternative to restore() this can be called in afterEach() to
@@ -119,12 +97,9 @@
     //
     // Returns nothing.
     context[method].clean = function () {
-      for (var key in cache) {
-        if (cache.hasOwnProperty(key)) {
-          delete context[key];
-        }
+      while(cache.length) {
+        delete context[cache.pop()];
       }
-      cache = {};
     };
 
     return context;

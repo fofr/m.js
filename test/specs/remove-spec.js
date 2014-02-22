@@ -1,29 +1,20 @@
 describe('jQuery.event.special.remove', function () {
-  var ctx = lazy();
-
-  // Helper to setup the context outside of a before block.
-  function set(name, value) {
-    beforeEach(ctx.set.bind(ctx, name, value));
-  };
+  var ctx = lazy({}, 'set', beforeEach);
 
   if (!m.$.event || !m.$.event.special) {
     return it('The current DOM library does not support the jQuery.event.special API');
   }
 
-  set('$element', function () {
+  ctx.set('$element', function () {
     return jQuery('<div>');
   });
 
-  set('$child', function () {
+  ctx.set('$child', function () {
     return jQuery('<div>');
   });
 
   beforeEach(function () {
     ctx.$element.append(ctx.$child);
-  });
-
-  afterEach(function () {
-    ctx.set.restore();
   });
 
   it('calls the event handler on remove', function () {

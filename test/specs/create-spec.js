@@ -1,14 +1,8 @@
 describe('m.create()', function () {
-  var ctx = lazy();
+  var ctx = lazy({}, 'set', beforeEach);
 
-  beforeEach(function () {
-    ctx.set('properties', function () {
-      return {constructor: function () {}};
-    });
-  });
-
-  afterEach(function () {
-    ctx.set.clean();
+  ctx.set('properties', function () {
+    return {constructor: function () {}};
   });
 
   it('returns a constructor function', function () {

@@ -1,25 +1,19 @@
 describe('m.events', function () {
   var events = m.events;
   var callbacks = events._callbacks; // Cache the original callbacks.
-  var ctx = lazy();
-
-  // Helper to setup the context outside of a before block.
-  function set(name, value) {
-    beforeEach(ctx.set.bind(ctx, name, value));
-  };
+  var ctx = lazy({}, 'set', beforeEach);
 
   afterEach(function () {
     events._callbacks = callbacks;
-    ctx.set.clean();
   });
 
   it('is an instance of Events', function () {
     assert.instanceOf(events, m.Events);
   });
 
-  set('handler1', function () { return sinon.spy() });
-  set('handler2', function () { return sinon.spy() });
-  set('handler3', function () { return sinon.spy() });
+  ctx.set('handler1', function () { return sinon.spy() });
+  ctx.set('handler2', function () { return sinon.spy() });
+  ctx.set('handler3', function () { return sinon.spy() });
 
   describe('', function () {
     beforeEach(function () {
@@ -70,7 +64,7 @@ describe('m.events', function () {
   });
 
   describe('SandboxEvents()', function () {
-    set('instance', function () {
+    ctx.set('instance', function () {
       return new m.SandboxEvents(events);
     });
 
@@ -132,7 +126,6 @@ describe('m.events', function () {
       });
 
       it('removes the registered listener for the event', function () {
-        debugger;
         ctx.instance.unsubscribe('dropdown:open', ctx.handler1);
 
         events.publish('dropdown:open');

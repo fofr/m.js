@@ -3,23 +3,18 @@ describe('m.module()', function () {
   var Module = module.Module;
   var ModuleFactory = module.ModuleFactory;
   var ModuleRegistry = module.ModuleRegistry;
-  var ctx = lazy();
+  var ctx = lazy({}, 'set', beforeEach);
 
-  // Helper to setup the context outside of a before block.
-  function set(name, value) {
-    beforeEach(ctx.set.bind(ctx, name, value));
-  };
-
-  set('factory', function () {
+  ctx.set('factory', function () {
     return new module.ModuleFactory('test');
   });
-  set('element', function () {
+  ctx.set('element', function () {
     return document.createElement('div');
   });
-  set('instance', function () {
+  ctx.set('instance', function () {
     return ctx.factory.build().create({el: ctx.element});
   });
-  set('fixture', function () {
+  ctx.set('fixture', function () {
     return document.createElement('div');
   });
 
@@ -29,7 +24,6 @@ describe('m.module()', function () {
 
   afterEach(function () {
     ctx.fixture.parentNode.removeChild(ctx.fixture);
-    ctx.set.clean();
   });
 
   it('forwards the call on to .define()', function () {
@@ -52,7 +46,7 @@ describe('m.module()', function () {
   });
 
   describe('ModuleRegistry', function () {
-    set('moduleRegistry', function () {
+    ctx.set('moduleRegistry', function () {
       return new m.module.ModuleRegistry();
     });
 
@@ -105,7 +99,7 @@ describe('m.module()', function () {
     });
 
     describe('.find()', function () {
-      set('example', new ModuleFactory('example'));
+      ctx.set('example', new ModuleFactory('example'));
 
       beforeEach(function () {
         ctx.moduleRegistry.registry.example = ctx.example;
@@ -133,7 +127,7 @@ describe('m.module()', function () {
     });
 
     describe('.initialize()', function () {
-      set('test1', function () {
+      ctx.set('test1', function () {
         return new ModuleFactory('test1', {});
       });
 
@@ -294,15 +288,16 @@ describe('m.module()', function () {
     });
 
     describe('.delegate()', function () {
-      set('events', function () { return [{on: 'click'}, {on: 'keypress'}]; });
-      set('el', function () { return document.createElement('div'); });
+      ctx.set('events', function () { return [{on: 'click'}, {on: 'keypress'}]; });
+      ctx.set('el', function () { return document.createElement('div'); });
+      ctx.set('target');
 
       beforeEach(function () {
         ctx.factory.events = ctx.events;
         ctx.el.setAttribute('data-test', '');
         document.body.appendChild(ctx.el);
 
-        ctx.set('target', sinon.stub(ctx.moduleRegistry, 'delegateHandler'));
+        ctx.target = sinon.stub(ctx.moduleRegistry, 'delegateHandler');
       });
 
       afterEach(function () {
@@ -336,12 +331,14 @@ describe('m.module()', function () {
     });
 
     describe('.delegateHandler', function () {
-      set('event', function () {
+      ctx.set('event', function () {
         var event = _.clone(m.$.Event('click'));
         event.currentTarget = ctx.element;
         event.preventDefault = sinon.spy();
         return event;
       });
+      ctx.set('target');
+      ctx.set('element');
 
       beforeEach(function () {
         ctx.element = document.createElement('div');
@@ -462,16 +459,16 @@ describe('m.module()', function () {
   });
 
   describe('ModuleFactory()', function () {
-    set('name', function () {
+    ctx.set('name', function () {
       return 'example';
     });
-    set('findModule', function () {
+    ctx.set('findModule', function () {
       return sinon.spy();
     });
-    set('methods', function () {
+    ctx.set('methods', function () {
       return {};
     });
-    set('subject', function () {
+    ctx.set('subject', function () {
       return new ModuleFactory(ctx.name, ctx.findModule);
     });
 
@@ -737,16 +734,16 @@ describe('m.module()', function () {
   });
 
   describe('Module()', function () {
-    set('el', function () {
+    ctx.set('el', function () {
       return document.createElement('div');
     });
-    set('sandbox', function () {
+    ctx.set('sandbox', function () {
       return m.sandbox();
     });
-    set('options', function () {
+    ctx.set('options', function () {
       return {el: ctx.el, sandbox: ctx.sandbox};
     });
-    set('subject', function () {
+    ctx.set('subject', function () {
       return new Module(ctx.options);
     });
 
