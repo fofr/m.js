@@ -109,22 +109,21 @@ be the module name ending with `-spec.js`.
 [2]: http://chaijs.com/api/assert/
 [3]: http://sinonjs.org/docs
 
-### Let Helper
+### Test Helper
 
-There is also a `this.let` helper that allows you to assign lazy loaded properties
+There is also a `ctx.set` helper that allows you to assign lazy loaded properties
 within your tests. For example:
 
-    this.let('subject', 4);
-    this.subject; // => 4
+    ctx.set('subject', 4);
+    ctx.subject; // => 4
 
-    this.let('subject', Math.random());
-    this.subject; // => 0.1856299617793411
-    this.subject; // => 0.1856299617793411
+    ctx.set('subject', Math.random);
+    ctx.subject; // => 0.1856299617793411
+    ctx.subject; // => 0.1856299617793411
 
-    this.let('fixture', document.createElement('div'));
-    this.let('subject', function () {
-      // Same scope available within lazy functions.
-      this.fixture.nodeName === 'DIV';
+    ctx.set('fixture', document.createElement('div'));
+    ctx.set('subject', function () {
+      ctx.fixture.nodeName === 'DIV';
     });
 
 License
