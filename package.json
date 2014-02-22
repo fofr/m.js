@@ -1,6 +1,6 @@
 {
   "name": "m",
-  "version": "0.2.2",
+  "version": "0.2.2-dev",
   "description": "A modular JavaScript system for websites",
   "homepage": "https://github.com/readmill/m.js",
   "main": "lib/m.js",
@@ -9,7 +9,9 @@
   },
   "devDependencies": {
     "uglify-js": "2.3.6",
-    "jshint": "2.1.11"
+    "jshint": "2.1.11",
+    "phantomjs": "1.9.7-1",
+    "mocha-phantomjs": "3.3.2"
   },
   "repository": "https://github.com/readmill/m.js.git",
   "author": "Aron Carroll <aron@readmill.com>",
