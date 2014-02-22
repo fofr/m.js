@@ -14,7 +14,6 @@
     <script src="./vendor/chai.js"></script>
     <script src="./vendor/sinon.js"></script>
     <script src="./vendor/mocha.js"></script>
-    <script src="./vendor/mocha.phantom.js"></script>
     <script src="../vendor/underscore.js"></script>
     <script src="../vendor/broadcast.js"></script>
     <script src="../vendor/soak.js"></script>
@@ -26,10 +25,7 @@
     <script src="../lib/m/events.js"></script>
     <script src="../lib/m/module.js"></script>
     <script>
-      mocha.setup({
-        ui: 'bdd',
-        reporter: ~navigator.userAgent.indexOf("Phantom") ? PhantomReporter : Mocha.reporters.HTML
-      });
+      mocha.setup({ui: 'bdd'});
       assert = chai.assert;
       sinon.assert.expose(assert, {prefix: ''});
 
@@ -49,7 +45,7 @@
     <script>
       //mocha.checkLeaks();
       //mocha.globals(['_', 'jQuery', 'm']);
-      mocha.run();
+      window.mochaPhantomJS ? mochaPhantomJS.run() : mocha.run();
     </script>
   </body>
 </html>
