@@ -33,6 +33,11 @@ MAXOUT = $(PKGDIR)/m.js
 MINOUT = $(PKGDIR)/m.min.js
 PORT ?= 8000
 
+npmbin := $(shell npm bin)
+runner := $(npmbin)/mocha-phantomjs
+uglify := $(npmbin)/uglifyjs
+jshint := $(npmbin)/jshint
+
 default: help
 
 help:
@@ -52,7 +57,7 @@ build: pkgdir
 	@echo Created $(MAXOUT)
 
 package: clean build
-	@`npm bin`/uglifyjs $(MAXOUT) --mangle --comments '/Copyright \d{4}/' --output $(MINOUT)
+	@$(uglify) $(MAXOUT) --mangle --comments '/Copyright \d{4}/' --output $(MINOUT)
 	@cat $(MINOUT) | gzip -c > $(MINOUT).gz
 	@echo "Built files..."
 	@ls -lahS pkg/*.{js,gz} | awk '{printf "%s\t%s\n", $$9, $$5}'
@@ -61,19 +66,24 @@ package: clean build
 	@zip -qj $(PKGDIR)/m.zip $(MAXOUT) $(MINOUT) LICENSE
 	@echo "Created $(PKGDIR)/m.zip"
 
-test:
-	@phantomjs test/index.js $(GREP)
+test: $(runner)
+	@env COLUMNS=$COLUMNS $(runner) -R dot test/index.html
 
 serve:
 	@echo "Tests are available at http://localhost:$(PORT)/test/index.html"
 	@python -m SimpleHTTPServer $(PORT)
 
-lint:
-	@`npm bin`/jshint --show-non-errors --config jshint.json lib
+lint: $(jshint)
+	@$(jshint) --show-non-errors --config jshint.json lib
 
 ci:
 	@$(MAKE) test
 	@$(MAKE) test DOM_LIBRARY=zepto
 	@$(MAKE) lint
+
+$(runner) $(uglify) $(jshint): $(npmbin)
+
+$(npmbin):
+	@npm install
 
 .PHONY: help pkgdir clean build package test serve lint ci
