@@ -10,6 +10,7 @@
     <script>
       document.write('<script src="../vendor/' + (location.hash.slice(1) || 'jquery') + '.js"></' + 'script>');
     </script>
+    <script src="./vendor/bind.js"></script>
     <script src="./vendor/lazy.js"></script>
     <script src="./vendor/chai.js"></script>
     <script src="./vendor/sinon.js"></script>
@@ -28,14 +29,6 @@
       mocha.setup({ui: 'bdd'});
       assert = chai.assert;
       sinon.assert.expose(assert, {prefix: ''});
-
-      before(function () {
-        lazy(this, 'let');
-      });
-
-      afterEach(function () {
-        this.let.clean();
-      });
     </script>
     <script src="./specs/create-spec.js"></script>
     <script src="./specs/remove-spec.js"></script>
