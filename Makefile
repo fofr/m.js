@@ -54,7 +54,7 @@ build: pkgdir
 	@rm -f $(MAXOUT)
 	@cat vendor/{soak,broadcast}.js > $(MAXOUT)
 	@echo "$$HEADER" >> $(MAXOUT)
-	@cat lib/m.js lib/m/{dom,create,remove,sandbox,events,module}.js >> $(MAXOUT)
+	@cat lib/m.js lib/m/{dom,create,remove,library,events,module}.js >> $(MAXOUT)
 	@echo Created $(MAXOUT)
 
 package: clean build
@@ -68,7 +68,7 @@ package: clean build
 	@echo "Created $(PKGDIR)/m.zip"
 
 test: $(runner)
-	@COLUMNS=$COLUMNS $(runner) --reporter=dot test/index.html?grep=$(grep)
+	@COLUMNS=$COLUMNS $(runner) --reporter=dot "test/index.html?grep=$(grep)#$(DOM_LIBRARY)"
 
 serve:
 	@echo "Tests are available at http://localhost:$(port)/test/index.html"

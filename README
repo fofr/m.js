@@ -74,18 +74,18 @@ To run the suite locally using phantomjs[1] run:
 
     $ make test
 
-To run only a subset of tests a `GREP` variable can be passed to make.
+To run only a subset of tests a `grep` variable can be passed to make.
 
-    $ make test GREP=build
+    $ make test grep=build
 
 Alternatively tests can be run in the browser:
 
     $ make test
 
 And open the browser at http://localhost:8000. You can choose a port by providing
-a `PORT` env variable to make.
+a `port` env variable to make.
 
-    $ make test PORT=4567
+    $ make test port=4567
 
 Finally, you can run the tests using an alternative DOM library such as Zepto
 by passing the `DOM_LIBRARY` variable to make.

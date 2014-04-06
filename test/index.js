@@ -38,12 +38,6 @@ if (grep) {
   suite += '?grep=' + grep;
 }
 
-// Pass in a dom library via an environment variable.
-// $ DOM_LIBRARY=zepto make test
-if (system.env.DOM_LIBRARY) {
-  suite += '#' + system.env.DOM_LIBRARY;
-}
-
 page.open(suite, function (status) {
   if (status !== 'success') {
     console.log('Unable to open the test suite');
