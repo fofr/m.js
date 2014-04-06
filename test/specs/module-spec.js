@@ -4,6 +4,8 @@ describe('m.module()', function () {
   var ModuleFactory = module.ModuleFactory;
   var ModuleRegistry = module.ModuleRegistry;
   var ctx = lazy({}, 'set', beforeEach);
+  var sandbox = sinon.sandbox.create();
+  var libraryRegistryCache;
 
   ctx.set('factory', function () {
     return new module.ModuleFactory('test');
@@ -20,10 +22,16 @@ describe('m.module()', function () {
 
   beforeEach(function () {
     document.body.appendChild(ctx.fixture);
+
+    // Cache the original contents of the library, then clear it out.
+    libraryRegistryCache = m.library.registry;
+    m.library.reset();
   });
 
   afterEach(function () {
     ctx.fixture.parentNode.removeChild(ctx.fixture);
+    sandbox.restore();
+    m.library.registry = libraryRegistryCache;
   });
 
   it('forwards the call on to .define()', function () {
@@ -46,8 +54,18 @@ describe('m.module()', function () {
   });
 
   describe('ModuleRegistry', function () {
+    ctx.set('hub', function () {
+      return {publish: sandbox.stub(), subscribe: sandbox.stub()};
+    });
+
+    ctx.set('library', function () {
+      var library = new m.Library();
+      library.add('hub', function () { return ctx.hub; });
+      return library;
+    });
+
     ctx.set('moduleRegistry', function () {
-      return new m.module.ModuleRegistry();
+      return new m.module.ModuleRegistry(ctx.library);
     });
 
     describe('.define()', function () {
@@ -121,7 +139,7 @@ describe('m.module()', function () {
         var options = {batman: 'two-face'};
         var result  = ctx.moduleRegistry.create('my-new-module', element, options);
         assert.equal(result.el, element);
-        assert.equal(result.type(), 'my-new-module');
+        assert.equal(result.type, 'my-new-module');
         assert.equal(result.options.batman, 'two-face');
       });
     });
@@ -190,28 +208,19 @@ describe('m.module()', function () {
         ctx.element = document.createElement('div');
         ctx.factory = new ModuleFactory('test');
         ctx.factory.options = ctx.defaults = {test1: 'a', test2: 'b', test3: 'c'};
+        ctx.dependencies = {};
 
-        ctx.sandbox = {
-          i18n: {
-            translate: sinon.spy()
-          }
-        };
-        sinon.stub(m, 'sandbox').returns(ctx.sandbox);
-
-        ctx.module = Module.extend();
-        ctx.instance = new ctx.module({el: ctx.element});
-
-        sinon.stub(ctx.module, 'create', function () {
-          return ctx.instance;
+        sandbox.stub(ctx.library, 'require').returns({
+          build: sandbox.stub().returns(ctx.dependencies),
+          teardown: sandbox.spy()
         });
-        sinon.stub(ctx.factory, 'build').returns(ctx.module);
 
         ctx.extractedOptions = {test1: 1, test2: 2};
-        sinon.stub(ctx.factory, 'extract').returns(ctx.extractedOptions);
+        sandbox.stub(ctx.factory, 'extract').returns(ctx.extractedOptions);
       });
 
       afterEach(function () {
-        m.sandbox.restore();
+        m.library.reset();
       });
 
       it('extract the options from the element', function () {
@@ -228,56 +237,50 @@ describe('m.module()', function () {
         assert.deepEqual(ctx.defaults, clone);
       });
 
-      it('create a sandbox object', function () {
-        ctx.moduleRegistry.instance(ctx.factory, ctx.element);
-        assert.called(m.sandbox);
+      it('initializes the module with dependencies', function () {
+        var instance = ctx.moduleRegistry.instance(ctx.factory, ctx.element);
+        assert.strictEqual(instance.options.dependencies, ctx.dependencies);
       });
 
-      it('initialize the module factory with the sandbox, options and translate function', function () {
-        ctx.moduleRegistry.instance(ctx.factory, ctx.element);
-
-        assert.called(ctx.module.create);
-        assert.calledWith(ctx.module.create, _.extend({}, ctx.extractedOptions, {
-          el: ctx.element,
-          sandbox: ctx.sandbox
-        }));
+      it('initialize the module with the element', function () {
+        var instance = ctx.moduleRegistry.instance(ctx.factory, ctx.element);
+        assert.strictEqual(instance.el, ctx.element);
       });
 
       it('calls the .run() method', function () {
-        var target = sinon.stub(ctx.instance, 'run');
-        ctx.moduleRegistry.instance(ctx.factory, ctx.element);
-
-        assert.called(target);
+        ctx.factory.mixin({run: sinon.spy()});
+        var instance = ctx.moduleRegistry.instance(ctx.factory, ctx.element);
+        assert.calledOnce(instance.run);
       });
 
       it('listens for the remove event and unbinds the listeners', function () {
-        var target = sinon.stub(ctx.moduleRegistry, 'removeInstance');
-        ctx.moduleRegistry.instance(ctx.factory, ctx.element);
+        var target = sandbox.stub(ctx.moduleRegistry, 'removeInstance');
+        ctx.dependencies = {
+          hub: new m.ModuleMediator(m.hub)
+        };
+        var instance = ctx.moduleRegistry.instance(ctx.factory, ctx.element);
 
-        ctx.instance.emit('remove');
+        instance.emit('remove');
         assert.called(target);
-        assert.calledWith(target, ctx.instance);
-
-        target.restore();
+        assert.calledWith(target, instance);
       });
 
       it('it adds the instance to the module cache', function () {
-        var target = sinon.stub(ctx.moduleRegistry, 'addInstance');
-        ctx.moduleRegistry.instance(ctx.factory, ctx.element);
+        var target = sandbox.stub(ctx.moduleRegistry, 'addInstance');
+        var instance = ctx.moduleRegistry.instance(ctx.factory, ctx.element);
 
         assert.called(target);
-        assert.calledWith(target, ctx.instance);
-
-        target.restore();
+        assert.calledWith(target, instance);
       });
 
       it('simply calls run() if the module already exists', function () {
         ctx.moduleRegistry.instances.test = [ctx.instance];
 
-        var target = sinon.stub(ctx.instance, 'run');
+        sinon.stub(ctx.instance, 'run');
+        sinon.stub(ctx.factory, 'build');
         ctx.moduleRegistry.instance(ctx.factory, ctx.element);
 
-        assert.called(target);
+        assert.called(ctx.instance.run);
         assert.notCalled(ctx.factory.build);
       });
 
@@ -737,11 +740,11 @@ describe('m.module()', function () {
     ctx.set('el', function () {
       return document.createElement('div');
     });
-    ctx.set('sandbox', function () {
-      return m.sandbox();
+    ctx.set('dependencies', function () {
+      return sinon.stub();
     });
     ctx.set('options', function () {
-      return {el: ctx.el, sandbox: ctx.sandbox};
+      return {el: ctx.el, dependencies: ctx.dependencies};
     });
     ctx.set('subject', function () {
       return new Module(ctx.options);
@@ -766,10 +769,6 @@ describe('m.module()', function () {
       }
     });
 
-    it('assigns the sandbox property', function () {
-      assert.equal(ctx.subject.sandbox, ctx.sandbox);
-    });
-
     it('assigns a cid property', function () {
       assert.match(ctx.subject.cid, /base:\d+/);
     });
@@ -780,13 +779,15 @@ describe('m.module()', function () {
       assert.notEqual(ctx.subject.options, Module.prototype.options);
     });
 
-    it('triggers the "module:create" event if sandbox.publish exists', function () {
-      var target = sinon.spy();
+    it('triggers the "module:create" event if the hub library exists', function () {
+      var publish = sandbox.spy();
+      ctx.dependencies = {
+        hub: {publish: publish}
+      };
 
-      ctx.sandbox = {publish: target};
       var subject = ctx.subject;
-      assert.called(target);
-      assert.calledWith(target, 'module:create', ctx.options, ctx.subject);
+      assert.called(publish);
+      assert.calledWith(publish, 'module:create', ctx.options, subject);
     });
 
     it('initializes the module', function () {
@@ -830,9 +831,9 @@ describe('m.module()', function () {
       });
     });
 
-    describe('.type()', function () {
+    describe('.type', function () {
       it('returns the module factory type', function () {
-        assert.equal(ctx.subject.type(), 'base');
+        assert.equal(ctx.subject.type, 'base');
       });
     });
 
@@ -849,13 +850,14 @@ describe('m.module()', function () {
         assert.equal(ctx.subject.$el.html(), html);
       });
 
-      it('triggers the "module:html" event if sandbox.publish exists', function () {
-        var target = sinon.spy();
+      it('triggers the "module:update" event if the hub library exists', function () {
+        var publish = sandbox.spy();
 
-        ctx.subject.sandbox = {publish: target};
+        ctx.dependencies = {hub: {publish: publish}};
         ctx.subject.html('<div></div>');
-        assert.called(target);
-        assert.calledWith(target, 'module:html', '<div></div>', ctx.subject);
+
+        assert.called(publish);
+        assert.calledWith(publish, 'module:update', '<div></div>', ctx.subject);
       });
 
       it('returns itself', function () {
@@ -892,13 +894,13 @@ describe('m.module()', function () {
         assert.calledWith(target, ctx.subject);
       });
 
-      it('triggers the "module:remove" event if sandbox.publish exists', function () {
-        var target = sinon.spy();
+      it('triggers the "module:remove" event if the hub library exists', function () {
+        var publish = sinon.spy();
+        ctx.dependencies = {hub: {publish: publish}};
 
-        ctx.subject.sandbox = {publish: target};
         ctx.subject.remove();
-        assert.called(target);
-        assert.calledWith(target, 'module:remove', ctx.subject);
+        assert.called(publish);
+        assert.calledWith(publish, 'module:remove', ctx.subject);
       });
 
       it('removes the element from the page', function () {
@@ -987,22 +989,28 @@ describe('m.module()', function () {
   });
 
   describe('m.events.on(module:remove)', function () {
-    it('removes all handlers registered by the sandbox', function () {
-      var target = sinon.spy();
-      m.events.publish('module:remove', {sandbox: {unsubscribe: target}});
+    it('cleans up all module dependencies', function () {
+      var dependencies = {teardown: sandbox.spy(), build: sandbox.spy()};
+      sandbox.stub(m.library, 'require').returns(dependencies);
 
-      assert.called(target);
-      assert.calledWithExactly(target);
+      var instance = m.module.instance(ctx.factory, ctx.element);
+      instance.emit('remove', instance);
+
+      assert.called(dependencies.teardown);
     });
   });
 
-  describe('m.events.on(module:html)', function () {
+  describe('m.events.on(module:update)', function () {
     it('reinitializes the module', function () {
-      var target = sinon.stub(m.module, 'initialize');
-      var el = document.createElement('div');
-      m.events.publish('module:html', '<div>NewHTML</div>', {el: el});
-      assert.calledWith(target, el);
-      target.restore();
+      var target = sandbox.stub(m.module, 'initialize');
+      sandbox.stub(m.library, 'require').returns({
+        build: sandbox.stub().returns({hub: new m.ModuleMediator(m.events)}),
+        teardown: sandbox.stub()
+      });
+
+      var instance = m.module.instance(ctx.factory, ctx.element);
+      instance.update();
+      assert.calledWith(target, ctx.element);
     });
   });
 });
