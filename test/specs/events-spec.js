@@ -63,9 +63,9 @@ describe('m.events', function () {
     });
   });
 
-  describe('SandboxEvents()', function () {
+  describe('ModuleHub()', function () {
     ctx.set('instance', function () {
-      return new m.SandboxEvents(events);
+      return new m.ModuleMediator(events);
     });
 
     describe('.publish()', function () {
@@ -186,13 +186,9 @@ describe('m.events', function () {
     });
   });
 
-  describe('sandbox.setup()', function () {
-    it('applies a sandbox instance to the instance', function () {
-      var sandbox = m.sandbox();
-      var prototype = m.SandboxEvents.prototype;
-      assert.equal(sandbox.publish, prototype.publish);
-      assert.equal(sandbox.subscribe, prototype.subscribe);
-      assert.equal(sandbox.unsubscribe, prototype.unsubscribe);
+  describe('Library integration', function () {
+    it('registers itself into the library', function () {
+      assert(m.library.has('hub'));
     });
   });
 });
