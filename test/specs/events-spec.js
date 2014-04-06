@@ -186,9 +186,9 @@ describe('m.events', function () {
     });
   });
 
-  describe('Library integration', function () {
+  describe('LibraryRegistry integration', function () {
     it('registers itself into the library', function () {
-      assert(m.library.has('hub'));
+      assert(m.libraries.has('hub'));
     });
   });
 });

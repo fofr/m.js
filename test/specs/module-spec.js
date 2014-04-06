@@ -3,9 +3,8 @@ describe('m.module()', function () {
   var Module = module.Module;
   var ModuleFactory = module.ModuleFactory;
   var ModuleRegistry = module.ModuleRegistry;
-  var ctx = lazy({}, 'set', beforeEach);
   var sandbox = sinon.sandbox.create();
-  var libraryRegistryCache;
+  var ctx = lazy({}, 'set', beforeEach);
 
   ctx.set('factory', function () {
     return new module.ModuleFactory('test');
@@ -22,16 +21,11 @@ describe('m.module()', function () {
 
   beforeEach(function () {
     document.body.appendChild(ctx.fixture);
-
-    // Cache the original contents of the library, then clear it out.
-    libraryRegistryCache = m.library.registry;
-    m.library.reset();
   });
 
   afterEach(function () {
     ctx.fixture.parentNode.removeChild(ctx.fixture);
     sandbox.restore();
-    m.library.registry = libraryRegistryCache;
   });
 
   it('forwards the call on to .define()', function () {
@@ -58,14 +52,14 @@ describe('m.module()', function () {
       return {publish: sandbox.stub(), subscribe: sandbox.stub()};
     });
 
-    ctx.set('library', function () {
-      var library = new m.Library();
-      library.add('hub', function () { return ctx.hub; });
-      return library;
+    ctx.set('LibraryRegistry', function () {
+      var LibraryRegistry = new m.LibraryRegistry();
+      LibraryRegistry.add('hub', function () { return ctx.hub; });
+      return LibraryRegistry;
     });
 
     ctx.set('moduleRegistry', function () {
-      return new m.module.ModuleRegistry(ctx.library);
+      return new m.module.ModuleRegistry(ctx.LibraryRegistry);
     });
 
     describe('.define()', function () {
@@ -210,17 +204,13 @@ describe('m.module()', function () {
         ctx.factory.options = ctx.defaults = {test1: 'a', test2: 'b', test3: 'c'};
         ctx.dependencies = {};
 
-        sandbox.stub(ctx.library, 'require').returns({
+        sandbox.stub(ctx.LibraryRegistry, 'require').returns({
           build: sandbox.stub().returns(ctx.dependencies),
           teardown: sandbox.spy()
         });
 
         ctx.extractedOptions = {test1: 1, test2: 2};
         sandbox.stub(ctx.factory, 'extract').returns(ctx.extractedOptions);
-      });
-
-      afterEach(function () {
-        m.library.reset();
       });
 
       it('extract the options from the element', function () {
@@ -1012,7 +1002,7 @@ describe('m.module()', function () {
   describe('m.events.on(module:remove)', function () {
     it('cleans up all module dependencies', function () {
       var dependencies = {teardown: sandbox.spy(), build: sandbox.spy()};
-      sandbox.stub(m.library, 'require').returns(dependencies);
+      sandbox.stub(m.libraries, 'require').returns(dependencies);
 
       var instance = m.module.instance(ctx.factory, ctx.element);
       instance.emit('remove', instance);
@@ -1024,7 +1014,7 @@ describe('m.module()', function () {
   describe('m.events.on(module:update)', function () {
     it('reinitializes the module', function () {
       var target = sandbox.stub(m.module, 'initialize');
-      sandbox.stub(m.library, 'require').returns({
+      sandbox.stub(m.libraries, 'require').returns({
         build: sandbox.stub().returns({hub: new m.ModuleMediator(m.events)}),
         teardown: sandbox.stub()
       });
