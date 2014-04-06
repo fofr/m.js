@@ -4,8 +4,8 @@ Contents
 - [Intro](#intro)
 - [Setup](#setup)
 - [Modules](#modules)
-- [Sandboxes](#sandboxes)
-  - [Extending the Sandbox](#extending-the-sandbox)
+- [Libraries](#libraries)
+  - [Adding libraries](#adding-libraries)
 - [Working with Modules](#working-with-modules)
   - [Passing Options to Modules](#passing-options-to-modules)
   - [Events](#events)
@@ -68,26 +68,38 @@ There are three guidelines to keep in mind when creating modules:
 
 [#backbone]: http://backbonejs.org/#View
 
-Sandboxes
+Libraries
 ---------
 
-Each module is also given it's own sandbox, this is how it interacts with the rest of the page. By default the sandbox only has an event hub with `.publish()` and `.subscribe()` methods but it's also possible to add additional methods via the `m.sandbox.mixin()` API.
+Each module also has access to predefined libraries, these are registered by the application and can cover anything from dom manipulation functions to global notifcations and api clients. This allows a module code to remain isolated from the rest of the app but still have access to common functionality.
 
-The idea is to keep all dependancies separate from the module and the global namespace by accessing them through the sandbox. This way a mock sandbox can be passed into a module for testing.
+By default each module has an `"hub"` module provided by default. This is an
+event mediator that allows events to be published an subsribed to across the
+entire page. This is available on the `this.options.dependancies.hub` property.
+
+As this string is pretty long you probably will want to alias it to `this.hub`
+if you intend to use it. **m** intentionally doesn't prescribe how dependancies
+are used, they're merly provided as part of the options object, the rest is up
+to you.
 
 ```js
 // One module can trigger events that others react to.
 m.module('like-button', {
   events: {click: '_onClick'}, // DOM events can be bound here.
+  initialize: function () {
+    // Save the hub object to a local property.
+    this.hub = this.options.dependancies.hub;
+  },
   _onClick: function () {
-    this.sandbox.publish('like');
+    this.hub.publish('like');
   }
 });
 
 // A counter can update.
 m.module('like-counter', {
-  initialise: function () {
-    this.sandbox.subscribe('like', this._onLike, this);
+  initialize: function () {
+    var hub = this.options.dependancies.hub;
+    hub.subscribe('like', this._onLike, this);
   },
   ...
   _onLike: function () {
@@ -101,32 +113,50 @@ m.events.subscribe('like', function () {
 });
 ```
 
-__NOTE:__ A sandbox can also be created for testing by calling `m.sandbox()`.
-
-### Extending the Sandbox
-
-The sandbox should be extended to include site specific methods and helpers. Use this to do all your global DOM manipulation. A client for making http requests is also a good example:
+The key idea behing the dependancies is to keep the application code seperate
+from the module code. This makes unit testing really easy.
 
 ```js
-// Used to add methods to the Sandbox prototype. Don't add
-// objects here they will be shared across all instances :)
-m.sandbox.mixin({
-  template: function (name) {
-    return jQuery('[data-template-' + name + ']').html();
-  },
-  createElement: function (html) {
-    return jQuery(html);
-  }
-});
+// Get a module instance;
+var LikeCounter = m.module.find('like-counter').build({force: true});
 
-// Called when a sandbox is created, receives the sandbox
-// instance. Use this to add objects to the sandbox.
-m.sandbox.setup(function (instance) {
-  instance.client = new WebClient();
+// Fake dependencies can be passed into the constructor.
+var likeCounter = new LikeCounter({
+  el: document.createElement('div'),
+  dependancies: {
+    hub: fakeHub,
+    dom: fakeDom
+  }
 });
 ```
 
-Check out *sandbox.js* for code, documentation and examples.
+### Adding libraries
+
+New libraries should be added to include site specific methods and helpers. Use
+this to do all your global DOM manipulation. A client for making http requests
+is also a good example:
+
+```js
+// Use the `add` method to register a new module. Give it a name and a function
+// that returns a new instance of the library. It should not return the same
+// object for each call to ensure no state is shared between modules.
+m.libraries.add('api', function () {
+  return new Client();
+});
+```
+
+If the library defines a `teardown` method this will be called when the
+module is removed from the page. You can use this to clean up any state. For
+example, the events hub uses this method to remove any bound event handlers.
+
+```js
+Client.prototype.teardown = function () {
+  // Perform cleanup in here.
+};
+```
+
+Check out *library.js* for code, documentation and examples.
+
 Working with Modules
 --------------------
 
@@ -216,7 +246,7 @@ m.module('faq-entry', {
 
 ### Event clean up
 
-A module can be removed from the page at any time by calling the `.remove()` method. **m** manages DOM event handlers and sandbox subscriptions for you so you don't need to unbind these yourself. But should anything else need to be cleaned up this should be done in the `.teardown()` method.
+A module can be removed from the page at any time by calling the `.remove()` method. **m** manages DOM event handlers and event hub subscriptions for you so you don't need to unbind these yourself. But should anything else need to be cleaned up this should be done in the `.teardown()` method.
 
 ```js
 m.module('timer', {
@@ -256,7 +286,7 @@ var LikeButtonModule = factory.build({ force: true });
 
 var instance = new LikeButtonModule({
   el: fixtureElement,
-  sandbox: fixtureSandbox,
+  dependencies: {hub: fakeHub},
   option1: 'an option',
   option2: 'another option'
 });
