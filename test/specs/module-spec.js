@@ -29,15 +29,13 @@ describe('m.module()', function () {
   });
 
   it('forwards the call on to .define()', function () {
-    var target = sinon.stub(module, 'define');
+    var target = sandbox.stub(module, 'define');
     var methods = {};
     module('test', methods);
 
     assert.called(target);
     assert.calledOn(target, module);
     assert.calledWith(target, 'test', methods);
-
-    target.restore();
   });
 
   it('has all the properties from a ModuleRegistry instance', function () {
@@ -72,27 +70,23 @@ describe('m.module()', function () {
 
       it('creates a new ModuleFactory instance', function () {
         var instance = new ModuleFactory('name');
-        var target = sinon.stub(module, 'ModuleFactory').returns(instance);
+        var target = sandbox.stub(module, 'ModuleFactory').returns(instance);
 
         ctx.moduleRegistry.define('name');
         assert.calledWithNew(target);
         assert.calledWith(target, 'name', ctx.moduleRegistry.find);
-
-        target.restore();
       });
 
       it('passes the methods into the ModuleFactory instance', function () {
         var methods = {method1: 'method1'};
         var instance = new ModuleFactory('name');
-        var target = sinon.stub(instance, 'methods');
+        var target = sandbox.stub(instance, 'methods');
 
-        sinon.stub(module, 'ModuleFactory').returns(instance);
+        sandbox.stub(module, 'ModuleFactory').returns(instance);
 
         ctx.moduleRegistry.define('name', methods);
         assert.called(target);
         assert.calledWith(target, {method1: 'method1'});
-
-        module.ModuleFactory.restore();
       });
 
       it('throws an exception if the module is already defined', function () {
@@ -104,9 +98,8 @@ describe('m.module()', function () {
 
       it('returns the newly created object', function () {
         var instance = new ModuleFactory('name');
-        var target = sinon.stub(module, 'ModuleFactory').returns(instance);
+        var target = sandbox.stub(module, 'ModuleFactory').returns(instance);
         assert.equal(ctx.moduleRegistry.define('name', ctx.factory), instance);
-        target.restore();
       });
     });
 
@@ -147,7 +140,7 @@ describe('m.module()', function () {
         ctx.element1 = m.$('<div data-test1>').appendTo(ctx.fixture);
         ctx.element2 = m.$('<div data-test1>').appendTo(ctx.fixture);
         ctx.element3 = m.$('<div data-test2>').appendTo(ctx.fixture);
-        ctx.target = sinon.stub(ctx.moduleRegistry, 'instance');
+        ctx.target = sandbox.stub(ctx.moduleRegistry, 'instance');
 
         ctx.moduleRegistry.registry = {
           test1: ctx.test1
@@ -172,11 +165,7 @@ describe('m.module()', function () {
 
       describe('', function () {
         beforeEach(function () {
-          ctx.delegate = sinon.stub(ctx.moduleRegistry, 'delegate');
-        });
-
-        afterEach(function () {
-          ctx.delegate.restore();
+          ctx.delegate = sandbox.stub(ctx.moduleRegistry, 'delegate');
         });
 
         it('delegates initilization to the document if events are provided', function () {
@@ -238,7 +227,7 @@ describe('m.module()', function () {
       });
 
       it('calls the .run() method', function () {
-        ctx.factory.mixin({run: sinon.spy()});
+        ctx.factory.mixin({run: sandbox.spy()});
         var instance = ctx.moduleRegistry.instance(ctx.factory, ctx.element);
         assert.calledOnce(instance.run);
       });
@@ -266,8 +255,8 @@ describe('m.module()', function () {
       it('simply calls run() if the module already exists', function () {
         ctx.moduleRegistry.instances.test = [ctx.instance];
 
-        sinon.stub(ctx.instance, 'run');
-        sinon.stub(ctx.factory, 'build');
+        sandbox.stub(ctx.instance, 'run');
+        sandbox.stub(ctx.factory, 'build');
         ctx.moduleRegistry.instance(ctx.factory, ctx.element);
 
         assert.called(ctx.instance.run);
@@ -290,7 +279,7 @@ describe('m.module()', function () {
         ctx.el.setAttribute('data-test', '');
         document.body.appendChild(ctx.el);
 
-        ctx.target = sinon.stub(ctx.moduleRegistry, 'delegateHandler');
+        ctx.target = sandbox.stub(ctx.moduleRegistry, 'delegateHandler');
       });
 
       afterEach(function () {
@@ -327,7 +316,7 @@ describe('m.module()', function () {
       ctx.set('event', function () {
         var event = _.clone(m.$.Event('click'));
         event.currentTarget = ctx.element;
-        event.preventDefault = sinon.spy();
+        event.preventDefault = sandbox.spy();
         return event;
       });
       ctx.set('target');
@@ -335,7 +324,7 @@ describe('m.module()', function () {
 
       beforeEach(function () {
         ctx.element = document.createElement('div');
-        ctx.target = sinon.stub(ctx.moduleRegistry, 'instance');
+        ctx.target = sandbox.stub(ctx.moduleRegistry, 'instance');
       });
 
       it('instantiates the module with the factory and current event target', function () {
@@ -456,7 +445,7 @@ describe('m.module()', function () {
       return 'example';
     });
     ctx.set('findModule', function () {
-      return sinon.spy();
+      return sandbox.spy();
     });
     ctx.set('methods', function () {
       return {};
@@ -545,7 +534,7 @@ describe('m.module()', function () {
 
       it('uses the findModule() function to lookup a string', function () {
         var ParentModule = Module.extend();
-        ctx.findModule = sinon.stub().returns(ParentModule);
+        ctx.findModule = sandbox.stub().returns(ParentModule);
 
         ctx.subject.extend(ParentModule);
         assert.strictEqual(ctx.subject.parent, ParentModule);
@@ -752,7 +741,7 @@ describe('m.module()', function () {
       return document.createElement('div');
     });
     ctx.set('dependencies', function () {
-      return sinon.stub();
+      return sandbox.stub();
     });
     ctx.set('options', function () {
       return {el: ctx.el, dependencies: ctx.dependencies};
@@ -802,7 +791,7 @@ describe('m.module()', function () {
     });
 
     it('initializes the module', function () {
-      var target = sinon.spy();
+      var target = sandbox.spy();
       var ChildModule = Module.extend({initialize: target});
 
       new ChildModule();
@@ -810,7 +799,7 @@ describe('m.module()', function () {
     });
 
     it('sets up the event handlers', function () {
-      var target = sinon.spy();
+      var target = sandbox.spy();
       var ChildModule = Module.extend({
         events: {click: '_onClick'},
         _onClick: target
@@ -828,7 +817,7 @@ describe('m.module()', function () {
       it('auto teardown after dom removal is not supported using Zepto due to a lack of $.event.special support');
     } else {
       it('tears down when module element is removed', function () {
-        var target = ctx.subject.teardown = sinon.spy();
+        var target = ctx.subject.teardown = sandbox.spy();
         ctx.fixture.appendChild(ctx.subject.el);
         ctx.subject.$el.remove();
         assert.called(target);
@@ -890,14 +879,14 @@ describe('m.module()', function () {
 
     describe('.remove()', function () {
       it('tears down the module', function () {
-        var target = sinon.stub(ctx.subject, 'teardown');
+        var target = sandbox.stub(ctx.subject, 'teardown');
         ctx.subject.remove();
 
         assert.called(target);
       });
 
       it('triggers the "remove" event on itself', function () {
-        var target = sinon.spy();
+        var target = sandbox.spy();
         ctx.subject.addListener('remove', target);
 
         ctx.subject.remove();
@@ -906,7 +895,7 @@ describe('m.module()', function () {
       });
 
       it('triggers the "module:remove" event if the hub library exists', function () {
-        var publish = sinon.spy();
+        var publish = sandbox.spy();
         ctx.dependencies = {hub: {publish: publish}};
 
         ctx.subject.remove();
@@ -933,7 +922,7 @@ describe('m.module()', function () {
       });
 
       it('delegates a handler for an event on a child element', function () {
-        var target = ctx.subject._onClick = sinon.spy();
+        var target = ctx.subject._onClick = sandbox.spy();
         ctx.subject.el.appendChild(document.createElement('span'));
 
         // Append to body for event bubbling to work.
@@ -948,7 +937,7 @@ describe('m.module()', function () {
       });
 
       it('binds the handler to the module scope', function () {
-        var target = ctx.subject._onClick = sinon.spy();
+        var target = ctx.subject._onClick = sandbox.spy();
 
         ctx.subject.delegateEvents({'click': '_onClick'});
         ctx.subject.$el.click();
@@ -957,7 +946,7 @@ describe('m.module()', function () {
       });
 
       it('accepts a function rather than a method name', function () {
-        var target = sinon.spy();
+        var target = sandbox.spy();
 
         ctx.subject.delegateEvents({'click': target});
         ctx.subject.$el.click();
@@ -966,7 +955,7 @@ describe('m.module()', function () {
       });
 
       it('unbinds all existing delegated events', function () {
-        var target = sinon.spy();
+        var target = sandbox.spy();
 
         ctx.subject.delegateEvents({'click': target});
         ctx.subject.delegateEvents();
@@ -978,7 +967,7 @@ describe('m.module()', function () {
 
     describe('.undelegateEvents()', function () {
       it('unbinds listeners bound using .delegateEvents()', function () {
-        var target = sinon.spy();
+        var target = sandbox.spy();
 
         ctx.subject.delegateEvents({'click': target});
         ctx.subject.undelegateEvents();
@@ -988,7 +977,7 @@ describe('m.module()', function () {
       });
 
       it('does not unbind other listeners', function () {
-        var target = sinon.spy();
+        var target = sandbox.spy();
 
         ctx.subject.$el.on('click', target);
         ctx.subject.undelegateEvents();
