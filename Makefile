@@ -74,11 +74,14 @@ serve:
 	@python -m SimpleHTTPServer $(PORT)
 
 lint: $(jshint)
-	@$(jshint) --show-non-errors --config jshint.json lib
+	@$(jshint) --show-non-errors --config=jshint.json lib && echo 'No lint errors found'
 
 ci:
+	@echo 'Running unit tests against jQuery...'
 	@$(MAKE) test
+	@echo 'Running unit tests against Zepto...'
 	@$(MAKE) test DOM_LIBRARY=zepto
+	@echo 'Linting JavaScript files...'
 	@$(MAKE) lint
 
 $(runner) $(uglify) $(jshint): $(npmbin)
