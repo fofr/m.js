@@ -478,7 +478,7 @@ describe('m.module()', function () {
     it('throws an error if no type is provided', function () {
       assert.throws(function () {
         new ModuleFactory();
-      });
+      }, Error);
     });
 
     it('has a type property', function () {
@@ -491,6 +491,10 @@ describe('m.module()', function () {
 
     it('has a selector property', function () {
       assert.equal(ctx.subject.selector, '[data-example]');
+    });
+
+    it('has a dependencies property', function () {
+      assert.deepEqual(ctx.subject.dependencies, ['hub']);
     });
 
     it('sets the findModule() method to the passed function', function () {
@@ -611,6 +615,23 @@ describe('m.module()', function () {
 
       it('returns itself', function () {
         assert.strictEqual(ctx.subject.options({limit: '5'}), ctx.subject);
+      });
+    });
+
+    describe('.requires()', function () {
+      it('adds the names to the dependencies array', function () {
+        ctx.subject.requires('dom');
+        assert.deepEqual(ctx.subject.dependencies, ['hub', 'dom']);
+      });
+
+      it('accepts arrays as well as strings', function () {
+        ctx.subject.requires(['api', 'notify'], 'dom');
+        assert.deepEqual(ctx.subject.dependencies, ['hub', 'api', 'notify', 'dom']);
+      });
+
+      it('ensures that the dependencies are all unique', function () {
+        ctx.subject.requires('dom', 'dom');
+        assert.deepEqual(ctx.subject.dependencies, ['hub', 'dom']);
       });
     });
 

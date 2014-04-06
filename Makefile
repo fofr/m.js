@@ -18,9 +18,9 @@ export HEADER
 define USAGE
 Usage instructions:
     make serve                runs a development server on port 8000
-    make serve PORT=[port]    runs a development server on the port specified
+    make serve port=[port]    runs a development server on the port specified
     make test                 runs the test suite using phantomjs
-    make test GREP=[filter]   runs the tests matching filter
+    make test grep=[filter]   runs the tests matching filter
     make clean                removes the pkg directory
     make build                creates a development build
     make package              creates a production (minified) build
@@ -31,7 +31,8 @@ export USAGE
 PKGDIR = pkg
 MAXOUT = $(PKGDIR)/m.js
 MINOUT = $(PKGDIR)/m.min.js
-PORT ?= 8000
+
+port ?= 8000
 
 npmbin := $(shell npm bin)
 runner := $(npmbin)/mocha-phantomjs
@@ -67,11 +68,11 @@ package: clean build
 	@echo "Created $(PKGDIR)/m.zip"
 
 test: $(runner)
-	@env COLUMNS=$COLUMNS $(runner) -R dot test/index.html
+	@COLUMNS=$COLUMNS $(runner) --reporter=dot test/index.html?grep=$(grep)
 
 serve:
-	@echo "Tests are available at http://localhost:$(PORT)/test/index.html"
-	@python -m SimpleHTTPServer $(PORT)
+	@echo "Tests are available at http://localhost:$(port)/test/index.html"
+	@python -m SimpleHTTPServer $(port)
 
 lint: $(jshint)
 	@$(jshint) --show-non-errors --config=jshint.json lib && echo 'No lint errors found'

@@ -13,8 +13,8 @@
     "phantomjs": "^1.9.7-1",
     "mocha-phantomjs": "3.3.2"
   },
-  "repository": "https://github.com/readmill/m.js.git",
-  "author": "Aron Carroll <aron@readmill.com>",
+  "repository": "https://github.com/aron/m.js.git",
+  "author": "Aron Carroll <code@aroncarroll.com>",
   "contributors": [
     "Jeff Chan <jefftchan@gmail.com>"
   ],
