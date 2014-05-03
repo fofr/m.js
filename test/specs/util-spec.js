@@ -1,4 +1,4 @@
-describe('m.create()', function () {
+describe('m.util.create()', function () {
   var ctx = lazy({}, 'set', beforeEach);
 
   ctx.set('properties', function () {
@@ -6,7 +6,7 @@ describe('m.create()', function () {
   });
 
   it('returns a constructor function', function () {
-    assert.isFunction(m.create(ctx.properties));
+    assert.isFunction(m.util.create(ctx.properties));
   });
 
   it('augments the constructor prototype with properties', function () {
@@ -16,7 +16,7 @@ describe('m.create()', function () {
     ctx.properties.method1 = method1;
     ctx.properties.method2 = method2;
 
-    var Factory = m.create(ctx.properties);
+    var Factory = m.util.create(ctx.properties);
 
     assert.equal(Factory.prototype.method1, method1);
     assert.equal(Factory.prototype.method2, method2);
@@ -26,7 +26,7 @@ describe('m.create()', function () {
     function method1() {}
     function method2() {}
 
-    var Factory = m.create(ctx.properties, {
+    var Factory = m.util.create(ctx.properties, {
       method1: method1,
       method2: method2
     });
@@ -36,21 +36,21 @@ describe('m.create()', function () {
   });
 
   it('adds an extend function to the constrcutor', function () {
-    var Factory = m.create(ctx.properties);
+    var Factory = m.util.create(ctx.properties);
     assert.isFunction(Factory.extend);
   });
 
   it('throws an error if no constructor is provided', function () {
     assert.throws(function () {
-      m.create();
+      m.util.create();
     });
 
     assert.throws(function () {
-      m.create({});
+      m.util.create({});
     });
 
     assert.throws(function () {
-      m.create({constructor: 'string'});
+      m.util.create({constructor: 'string'});
     });
   });
 });
