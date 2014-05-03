@@ -3,11 +3,22 @@
  *  Released under the MIT license
  *  More Information: http://github.com/aron/broadcast.js
  */
-(function (module, undefined) {
-
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define([], factory);
+  } else if (typeof exports === 'object') {
+    // Node. Does not work with strict CommonJS, but
+    // only CommonJS-like environments that support module.exports,
+    // like Node.
+    module.exports = factory();
+  } else {
+    // Browser globals (root is window)
+    root.Broadcast = factory();
+  }
+}(this, function () {
   // Retain a reference to the original property.
-  var _Broadcast = module.Broadcast,
-      hasOwnProp = Object.prototype.hasOwnProperty;
+  var hasOwnProp = Object.prototype.hasOwnProperty;
 
   /* Extends an object with properties from another
    *
@@ -230,7 +241,7 @@
             this._callbacks[topic] = [];
           }
           this._callbacks[topic].push({
-            context:   context, 
+            context:   context,
             callback:  callback,
             namespace: parsed.namespace
           });
@@ -340,16 +351,5 @@
     return Broadcast;
   };
 
-  // Export the function to either the exports or global object depending
-  // on the current environment.
-  if (typeof module.define === 'function' && module.define.amd) {
-    module.define('broadcast', function () {
-      return Broadcast;
-    });
-  } else if (module.exports) {
-    module.exports = Broadcast;
-  } else {
-    module.Broadcast = Broadcast;
-  }
-
-})(typeof module === 'object' ? module : this);
+  return Broadcast;
+}));

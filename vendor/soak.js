@@ -3,15 +3,23 @@
  *  Released under the MIT license
  *  More Information: http://github.com/aron/soak.js
  */
-(function (exports) {
-
-  var _inherit = exports.inherit,
-      _create  = exports.create,
-      _mixin   = exports.mixin;
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define([], factory);
+  } else if (typeof exports === 'object') {
+    module.exports = factory();
+  } else {
+    root.soak = factory();
+  }
+}(this, function () {
+  var root = {},
+      _inherit = root.inherit,
+      _create  = root.create,
+      _mixin   = root.mixin;
 
   /* Helper function to create .noConflict() methods for each function.
    *
-   * name     - Name of the property on the exports object.
+   * name     - Name of the property on the root object.
    * original - The original value of the property.
    * local    - The local function.
    *
@@ -23,7 +31,7 @@
    */
   function createNoConflict(name, original, local) {
     return function () {
-      exports[name] = original;
+      root[name] = original;
       return local;
     };
   }
@@ -58,7 +66,7 @@
     return target;
   }
 
-  /* Removes the mixin function from the exports object and returns it. */
+  /* Removes the mixin function from the root object and returns it. */
   mixin.noConflict = createNoConflict('mixin', _mixin, mixin);
 
   /* Used to create a new object in case calling the parent has side effects */
@@ -94,7 +102,7 @@
     return new DummyObject();
   }
 
-  /* Removes the create function from the exports object and returns it. */
+  /* Removes the create function from the root object and returns it. */
   create.noConflict = createNoConflict('create', _create, create);
 
   /* Public: Creates a new constructor function that inherits from a parent.
@@ -164,14 +172,8 @@
     return Base;
   };
 
-  /* Removes the inherit function from the exports object and returns it. */
+  /* Removes the inherit function from the root object and returns it. */
   inherit.noConflict = createNoConflict('inherit', _inherit, inherit);
 
-  // Export module to environment.
-  if (typeof exports.define === 'function' && exports.amd) {
-    exports.define('soak', {mixin: mixin, inherit: inherit, create: create});
-  } else {
-    mixin(exports, {mixin: mixin, inherit: inherit, create: create});
-  }
-
-})(typeof exports !== 'undefined' ? exports : this);
+  return {inherit: inherit, create: create, mixin: mixin};
+}));
