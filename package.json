@@ -9,9 +9,12 @@
   },
   "devDependencies": {
     "uglify-js": "^2.3.6",
-    "jshint": "^2.1.11",
+    "jshint": "2.4.4",
     "phantomjs": "^1.9.7-1",
-    "mocha-phantomjs": "3.3.2"
+    "mocha-phantomjs": "3.3.2",
+    "multiline": "^0.3.4",
+    "requirejs": "^2.1.11",
+    "amdclean": "^1.5.0"
   },
   "repository": "https://github.com/aron/m.js.git",
   "author": "Aron Carroll <code@aroncarroll.com>",
