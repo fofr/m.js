@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+
+var multiline = require('multiline');
+var amdclean = require('amdclean');
+var requirejs = require('requirejs');
+var fs = require('fs');
+var config = {
+  baseUrl: './',
+  name: 'm',
+  optimize: 'none',
+  out: 'pkg/m.js.tmp'
+};
+
+var wrapper = multiline(function () {/*
+(function (root, factory) {
+  var _m = root.m;
+  if (typeof define === 'function' && define.amd) {
+    define(['jquery', 'underscore'], factory);
+  } else if (typeof exports === 'object') {
+    module.exports = factory(require('jquery'), require('underscore'));
+  } else {
+    root.m = factory(root.$, root._);
+    root.m.noConflict = function () {
+      var m = root.m;
+      root.m = _m;
+      return m;
+    };
+  }
+}(this, function ($, _) {
+  {{code}}
+  return ctx.m;
+}));
+*/}).split('{{code}}');
+
+requirejs.optimize(config, function (status) {
+  var code = fs.readFileSync(config.out).toString('utf-8');
+  var cleaned = amdclean.clean({
+    code: code,
+    prefixMode: 'camelCase',
+    globalObject: true,
+    globalObjectName: 'ctx',
+    wrap: {
+      start: wrapper[0],
+      end: wrapper[1]
+    }
+  });
+
+  process.stdout.write(cleaned);
+  process.exit(0);
+}, function (err) {
+  console.err(err);
+  process.exit(1);
+});
+
