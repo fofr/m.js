@@ -52,9 +52,8 @@ clean:
 
 build: pkgdir
 	@rm -f $(MAXOUT)
-	@cat vendor/{soak,broadcast}.js > $(MAXOUT)
 	@echo "$$HEADER" >> $(MAXOUT)
-	@cat lib/m.js lib/m/{dom,create,remove,library,events,module}.js >> $(MAXOUT)
+	@./script/build >> $(MAXOUT)
 	@echo Created $(MAXOUT)
 
 package: clean build
@@ -68,14 +67,14 @@ package: clean build
 	@echo "Created $(PKGDIR)/m.zip"
 
 test: $(runner)
-	@COLUMNS=$COLUMNS $(runner) --reporter=dot "test/index.html?grep=$(grep)#$(DOM_LIBRARY)"
+	@COLUMNS=$$COLUMNS $(runner) --reporter=dot "test/index.html?grep=$(grep)#dom=$(DOM_LIBRARY)"
 
 serve:
 	@echo "Tests are available at http://localhost:$(port)/test/index.html"
 	@python -m SimpleHTTPServer $(port)
 
 lint: $(jshint)
-	@$(jshint) --show-non-errors --config=jshint.json lib && echo 'No lint errors found'
+	@$(jshint) --config=jshint.json lib && echo 'No lint errors found'
 
 ci:
 	@echo 'Running unit tests against jQuery...'
