@@ -1,3 +1,4 @@
+
 Contents
 --------
 
@@ -27,7 +28,11 @@ A light framework designed to solve three common problems when writing JavaScrip
 Setup
 -----
 
-All **m** requires to function is the *m.js* script included on the page after the [jQuery](http://jquery.com) and [Underscore](http://underscorejs.org) libraries. Then modules should be defined. Finally, the `m.module.initialize()` method should be called once everything is loaded, it might look something like this:
+All **m** requires to function is the *m.js* script included on the page after
+the [jQuery](http://jquery.com) and [Underscore](http://underscorejs.org)
+libraries. Then modules should be defined. Finally, the `m.module.initialize()`
+method should be called once everything is loaded, it might look something like
+this:
 
 ```html
 <script src="vendor/jquery.js"></script>
@@ -44,7 +49,9 @@ All **m** requires to function is the *m.js* script included on the page after t
 Modules
 -------
 
-The core part of **m** is creating modules. These can be thought of as distinct portions of a web page that are ideally responsible for one thing. Think a like button, a comment box, a popup menu etc.
+The core part of **m** is creating modules. These can be thought of as distinct
+portions of a web page that are ideally responsible for one thing. Think a like
+button, a comment box, a popup menu etc.
 
 A module can be defined using `m.module()`:
 
@@ -56,9 +63,14 @@ m.module('like-button', {
 });
 ```
 
-When an element with a `data-like-button` attribute is found on a page. An instance of the `like-button` module will be created and the element set to the `this.el` property (a jQuery wrapped `this.$el` is also available). The `initialize()` method is then called allowing you to set up the element with event listeners and other logic.
+When an element with a `data-like-button` attribute is found on a page. An
+instance of the `like-button` module will be created and the element set to the
+`this.el` property (a jQuery wrapped `this.$el` is also available). The
+`initialize()` method is then called allowing you to set up the element with
+event listeners and other logic.
 
-The API for a module is very similar to a [Backbone.View][#backbone] as it supports a subset of the methods such as `.el`, `.$el`, `.$()` and `.events`.
+The API for a module is very similar to a [Backbone.View][#backbone] as it
+supports a subset of the methods such as `.el`, `.$el`, `.$()` and `.events`.
 
 There are three guidelines to keep in mind when creating modules:
 
@@ -71,35 +83,40 @@ There are three guidelines to keep in mind when creating modules:
 Libraries
 ---------
 
-Each module also has access to predefined libraries, these are registered by the application and can cover anything from dom manipulation functions to global notifcations and api clients. This allows a module code to remain isolated from the rest of the app but still have access to common functionality.
+Each module also has access to predefined libraries, these are registered by
+the application and can cover anything from dom manipulation functions to
+global notifcations and api clients. This allows a module code to remain
+isolated from the rest of the app but still have access to common
+functionality.
+
+All dependencies are passed into the `initialize` function as the first
+argument. You can assign them to properties on you module if you wish.
 
 By default each module has an `"hub"` module provided by default. This is an
 event mediator that allows events to be published an subsribed to across the
-entire page. This is available on the `this.options.dependancies.hub` property.
+entire page. This is available on the `this.hub` property.
 
-As this string is pretty long you probably will want to alias it to `this.hub`
-if you intend to use it. **m** intentionally doesn't prescribe how dependancies
-are used, they're merly provided as part of the options object, the rest is up
-to you.
 
 ```js
 // One module can trigger events that others react to.
 m.module('like-button', {
   events: {click: '_onClick'}, // DOM events can be bound here.
-  initialize: function () {
-    // Save the hub object to a local property.
-    this.hub = this.options.dependancies.hub;
+  initialize: function (dependencies, options) {
+    // Hub is available to all modules by default.
+    this.hub;
+
+    // Assign other dependencies how you wish.
+    this.dom = dependencies.dom;
   },
   _onClick: function () {
     this.hub.publish('like');
   }
-});
+}).requires('dom');
 
 // A counter can update.
 m.module('like-counter', {
-  initialize: function () {
-    var hub = this.options.dependancies.hub;
-    hub.subscribe('like', this._onLike, this);
+  initialize: function (dependencies) {
+    this.hub.subscribe('like', this._onLike, this);
   },
   ...
   _onLike: function () {
@@ -121,12 +138,9 @@ from the module code. This makes unit testing really easy.
 var LikeCounter = m.module.find('like-counter').build({force: true});
 
 // Fake dependencies can be passed into the constructor.
-var likeCounter = new LikeCounter({
-  el: document.createElement('div'),
-  dependancies: {
-    hub: fakeHub,
-    dom: fakeDom
-  }
+var likeCounter = new LikeCounter(document.createElement('div'), {
+  hub: fakeHub,
+  dom: fakeDom
 });
 ```
 
@@ -160,13 +174,18 @@ Check out *library.js* for code, documentation and examples.
 Working with Modules
 --------------------
 
-While modules are pretty basic in themselves, there are a few extra methods that extend them.
+While modules are pretty basic in themselves, there are a few extra methods
+that extend them.
 
 ### Passing in options to modules
 
-Data attributes can be added to elements following the style `#{module_name}-#{option_key}=#{option_value}`. These will be extracted from the element and set on the `this.options` property. Defaults can be provided by using the `.options()` method.
+Data attributes can be added to elements following the style
+`#{module_name}-#{option_key}=#{option_value}`. These will be extracted from
+the element and passed to `.initialize()` via the `options` argument. Defaults
+can be provided by using the `.options()` method.
 
-Hyphenated names will be converted to camelCase and JSON inside values will be evaluated allowing complex data structures to be passed in.
+Hyphenated names will be converted to camelCase and JSON inside values will be
+evaluated allowing complex data structures to be passed in.
 
 ```html
 <!-- html -->
@@ -176,17 +195,20 @@ Hyphenated names will be converted to camelCase and JSON inside values will be e
 ```js
 // JavaScript
 m.module('truncate', {
-  initialize: function () {
-    this.options.likes === 5;
+  initialize: function (dependencies, options) {
+    options.lines === 5;
   }
-}).options({likes: 2});
+}).options({lines: 2}); // A default value can be provided.
 ```
 
 See `ModuleFactory#extract()` in *module.js* for more documentation and examples.
 
 ### Events
 
-DOM events such as click and key press handlers can easily be added by using the `.events` property. These follow the style `#{event} #{selector}: #{method}`. If no selector is provided the root module element (`this.el`) will be used.
+DOM events such as click and key press handlers can easily be added by using
+the `.events` property. These follow the style `#{event} #{selector}:
+#{method}`. If no selector is provided the root module element (`this.el`) will
+be used.
 
 ```js
 m.module('comment-field', {
@@ -206,9 +228,13 @@ See `Module#delegateEvents()` in *module.js* for more documentation and examples
 
 ### Deferred initialization
 
-Sometimes an element doesn't need to do anything on a page until the user interacts with it. In these cases it's wasteful to use the `.initialize()` method to set the whole object up on page load.
+Sometimes an element doesn't need to do anything on a page until the user
+interacts with it. In these cases it's wasteful to use the `.initialize()`
+method to set the whole object up on page load.
 
-The `.defer()` method can be used to wait until a DOM event is triggered before running the `.initialize()` code. A separate method `.run()` will be called each time the event is subsequently triggered.
+The `.defer()` method can be used to wait until a DOM event is triggered before
+running the `.initialize()` code. A separate method `.run()` will be called
+each time the event is subsequently triggered.
 
 ```js
 m.module('alert-button', {
@@ -227,7 +253,8 @@ See `ModuleFactory#defer()` in *module.js* for more documentation and examples.
 
 ### Mixins
 
-If you find you have modules sharing a lot of the same code, you can use the `.mixin()` method to share it between modules.
+If you find you have modules sharing a lot of the same code, you can use the
+`.mixin()` method to share it between modules.
 
 ```js
 var toggle = {
@@ -246,11 +273,14 @@ m.module('faq-entry', {
 
 ### Event clean up
 
-A module can be removed from the page at any time by calling the `.remove()` method. **m** manages DOM event handlers and event hub subscriptions for you so you don't need to unbind these yourself. But should anything else need to be cleaned up this should be done in the `.teardown()` method.
+A module can be removed from the page at any time by calling the `.remove()`
+method. **m** manages DOM event handlers and event hub subscriptions for you so
+you don't need to unbind these yourself. But should anything else need to be
+cleaned up this should be done in the `.teardown()` method.
 
 ```js
 m.module('timer', {
-  initialize: function () {
+  initialize: function (dependencies, options) {
     this.timer = setInterval(this.runLots, 300);
   },
   teardown: function () {
@@ -284,10 +314,8 @@ var factory = m.module.find('like-button');
 // Create an instance, the `force` flag ignores the cache.
 var LikeButtonModule = factory.build({ force: true });
 
-var instance = new LikeButtonModule({
-  el: fixtureElement,
-  dependencies: {hub: fakeHub},
-  option1: 'an option',
-  option2: 'another option'
-});
+var fixtureElement = document.createElement('div');
+var mockDeps = {hub: fakeHub};
+var mockOptions = {option1: 'an option', option2: 'another option'};
+var instance = new LikeButtonModule(fixtureElement, mockDeps, mockOptions);
 ```
