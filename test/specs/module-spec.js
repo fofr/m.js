@@ -13,7 +13,7 @@ describe('m.module()', function () {
     return document.createElement('div');
   });
   ctx.set('instance', function () {
-    return ctx.factory.build().create({el: ctx.element});
+    return ctx.factory.build().create(ctx.element);
   });
   ctx.set('fixture', function () {
     return document.createElement('div');
@@ -127,7 +127,37 @@ describe('m.module()', function () {
         var result  = ctx.moduleRegistry.create('my-new-module', element, options);
         assert.equal(result.el, element);
         assert.equal(result.type, 'my-new-module');
-        assert.equal(result.options.batman, 'two-face');
+      });
+
+      it('passes dependencies through to the initialize method', function () {
+        var element = document.createElement('div');
+        var dependencies = {batman: 'two-face'};
+        var init = sandbox.spy();
+
+        ctx.moduleRegistry.define('my-new-module', {
+          initialize: init
+        }).requires('batman');
+
+        sandbox.stub(ctx.LibraryRegistry, 'require').returns({
+          build: sandbox.stub().returns(dependencies),
+          teardown: sandbox.spy()
+        });
+
+        ctx.moduleRegistry.create('my-new-module', element, {});
+        assert.calledWith(init, dependencies);
+      });
+
+      it('passes options through to the initialize method', function () {
+        var element = document.createElement('div');
+        var options = {batman: 'two-face'};
+        var init = sinon.spy();
+
+        ctx.moduleRegistry.define('my-new-module', {
+          initialize: init
+        });
+
+        ctx.moduleRegistry.create('my-new-module', element, options);
+        assert.calledWith(init, sinon.match.object, options);
       });
     });
 
@@ -188,7 +218,6 @@ describe('m.module()', function () {
 
     describe('.instance()', function () {
       beforeEach(function () {
-        ctx.element = document.createElement('div');
         ctx.factory = new ModuleFactory('test');
         ctx.factory.options = ctx.defaults = {test1: 'a', test2: 'b', test3: 'c'};
         ctx.dependencies = {};
@@ -217,8 +246,19 @@ describe('m.module()', function () {
       });
 
       it('initializes the module with dependencies', function () {
+        var spy = sandbox.stub().returns(ctx.instance);
+        sandbox.stub(ctx.factory, 'build').returns({create: spy});
+
         var instance = ctx.moduleRegistry.instance(ctx.factory, ctx.element);
-        assert.strictEqual(instance.options.dependencies, ctx.dependencies);
+        assert.calledWith(spy, ctx.element, ctx.dependencies, sinon.match.object);
+      });
+
+      it('initializes the module with options', function () {
+        var spy = sandbox.stub().returns(ctx.instance);
+        sandbox.stub(ctx.factory, 'build').returns({create: spy});
+
+        var instance = ctx.moduleRegistry.instance(ctx.factory, ctx.element);
+        assert.calledWith(spy, ctx.element, sinon.match.object, ctx.extractedOptions);
       });
 
       it('initialize the module with the element', function () {
@@ -256,7 +296,7 @@ describe('m.module()', function () {
         ctx.moduleRegistry.instances.test = [ctx.instance];
 
         sandbox.stub(ctx.instance, 'run');
-        sandbox.stub(ctx.factory, 'build');
+        sandbox.stub(ctx.factory, 'build').returns(ctx.instance);
         ctx.moduleRegistry.instance(ctx.factory, ctx.element);
 
         assert.called(ctx.instance.run);
@@ -737,17 +777,14 @@ describe('m.module()', function () {
   });
 
   describe('Module()', function () {
-    ctx.set('el', function () {
-      return document.createElement('div');
-    });
     ctx.set('dependencies', function () {
-      return sandbox.stub();
+      return {};
     });
     ctx.set('options', function () {
-      return {el: ctx.el, dependencies: ctx.dependencies};
+      return {};
     });
     ctx.set('subject', function () {
-      return new Module(ctx.options);
+      return new Module(ctx.element, ctx.dependencies, ctx.options);
     });
 
     it('is an instance of Events', function () {
@@ -755,7 +792,7 @@ describe('m.module()', function () {
     });
 
     it('assigns .el as the element option', function () {
-      assert.ok(ctx.subject.el === ctx.el);
+      assert.ok(ctx.subject.el === ctx.element);
     });
 
     it('wraps .$el in $ if not already wrapped', function () {
@@ -771,12 +808,6 @@ describe('m.module()', function () {
 
     it('assigns a cid property', function () {
       assert.match(ctx.subject.cid, /base:\d+/);
-    });
-
-    it('assigns the options property', function () {
-      ctx.options['foo'] = 'bar';
-      assert.equal(ctx.subject.options.foo, 'bar');
-      assert.notEqual(ctx.subject.options, Module.prototype.options);
     });
 
     it('triggers the "module:create" event if the hub library exists', function () {
@@ -795,7 +826,7 @@ describe('m.module()', function () {
       var ChildModule = Module.extend({initialize: target});
 
       new ChildModule();
-      assert.called(target);
+      assert.calledWith(target, ctx.dependencies, ctx.options);
     });
 
     it('sets up the event handlers', function () {
