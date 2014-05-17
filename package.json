@@ -8,13 +8,13 @@
     "test": "make test"
   },
   "devDependencies": {
-    "uglify-js": "^2.3.6",
+    "uglify-js": "~2.4.13",
     "jshint": "2.4.4",
-    "phantomjs": "^1.9.7-1",
-    "mocha-phantomjs": "3.3.2",
+    "phantomjs": "~1.9.7-5",
+    "mocha-phantomjs": "~3.4.0",
     "multiline": "^0.3.4",
     "requirejs": "^2.1.11",
-    "amdclean": "^1.5.0"
+    "amdclean": "~2.0.0"
   },
   "repository": "https://github.com/aron/m.js.git",
   "author": "Aron Carroll <code@aroncarroll.com>",
