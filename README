@@ -12,14 +12,13 @@ m.js (development) and m.min.js (production) builds ready for use.
 
 The whole library minified and gzipped currently weighs in at around 3.5kb.
 
-[1]: https://github.com/readmill/m.js/releases
+[1]: https://github.com/aron/m.js/releases
 
 Dependencies
 ------------
 
 m requires that the jQuery[1] and underscore[2] libraries are available on
 the page before the m.js script is included.
-
 
 m also works using Zepto[3], a lightweight alternative to jQuery designed
 for modern browsers and mobile devices. Just include Zepto instead of jQuery
@@ -29,9 +28,15 @@ __NOTE:__ One known caveat with using Zepto is that the .teardown() method on
 a module will not be called when a dom element is removed from the document.
 You'll need to manage this yourself or port the special events API to Zepto.
 
+When using an AMD loader you'll need to ensure the modules "jquery" and
+"underscore" are available. For alternatives to jQuery you'll need to alias
+the module (RequireJS provides the "map" configuration setting[4]).
+
+
 [1]: http://jquery.com
 [2]: http://underscorejs.org
 [3]: http://zeptojs.com/
+[4]: http://requirejs.org/docs/api.html#config-map
 
 Development
 -----------
@@ -47,6 +52,11 @@ machine. Then run:
 To run the linter:
 
     $ make lint
+
+Code is organized by AMD modules using RequireJS and the CommonJS wrapper
+pattern[1].
+
+[1]: http://requirejs.org/docs/commonjs.html#manualconversion
 
 Production
 ----------
@@ -68,7 +78,7 @@ Testing
 -------
 
 The entire test suite is run on Travis CI on each push you can check the current
-state at any time by visiting: https://travis-ci.org/readmill/m.js
+state at any time by visiting: https://travis-ci.org/aron/m.js
 
 To run the suite locally using phantomjs[1] run:
 
