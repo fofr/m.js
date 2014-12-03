@@ -206,9 +206,8 @@ See `ModuleFactory#extract()` in *module.js* for more documentation and examples
 ### Events
 
 DOM events such as click and key press handlers can easily be added by using
-the `.events` property. These follow the style `#{event} #{selector}:
-#{method}`. If no selector is provided the root module element (`this.el`) will
-be used.
+the `.events` property. These follow the style `#{event} #{selector}:#{method}`.
+If no selector is provided the root module element (`this.el`) will be used.
 
 ```js
 m.module('comment-field', {
